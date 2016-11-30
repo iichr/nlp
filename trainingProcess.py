@@ -4,59 +4,89 @@ from nltk.tag import brill, brill_trainer
 from nltk.corpus.reader import PlaintextCorpusReader
 import nltk.data
 from os import listdir
-from os import path
+from os.path import isfile
 
+##############################
+# PATHS
+##############################
 
 path_names = '/Users/iichr/Documents/Python/nlp/trainData'
-path_trainwsj = '/Users/iichr/Documents/Python/nlp/trainData/wsj_training/wsj_0001.txt'
+path_trainwsjtext1 = '/Users/iichr/Documents/Python/nlp/trainData/wsj_training/wsj_0001.txt'
+path_taggedfolder = '/Users/iichr/Documents/Python/nlp/trainData/wsj_training/'
 
-# nltk.data.load('/Users/iichr/Documents/Python/nlp/trainData/wsj_untagged/names.family.txt', format="text")
-# corpus_root = 'trainData/wsj_untagged'
+allfiles = listdir(path_taggedfolder)
 
-"""
-Names reading from given name files
-"""
+##############################
+# WRITING TO FILES
+##############################
 
-# name_read = nltk.corpus.reader.plaintext.PlaintextCorpusReader(path_names, '.*')
-name_read = PlaintextCorpusReader(path_names, '.*')
+listoftagged_file = open('extractedtags', 'w')
 
-names = []
-for w in (name_read.words('names.male') + name_read.words('names.female') + name_read.words('names.family')):
-    names.append(['PERSON', w])
 
-# TESTING
-# for name in names:
-#     print(name, "\n")
+def names_extract():
+    """ Extract names from our corpus to a list
+    Uses the three files for male, female, and family names.
 
-"""
-Extract training data
-path -> [entities]
+    :return: A list of names.
+    """
+    # name_read = nltk.corpus.reader.plaintext.PlaintextCorpusReader(path_names, '.*')
+    name_read = PlaintextCorpusReader(path_names, '.*')
 
-path = the path from which to do extraction of pre-named entities.
-"""
-# TODO add way to use all txt files in the specified path e.g loop through
+    names = []
+    for w in (name_read.words('names.male') + name_read.words('names.female') + name_read.words('names.family')):
+        names.append(['PERSON', w])
 
-def training_extract(path):
 
+def folder_to_txt_files(folder):
+    """ Convert a folder to a list of the files it contains
+
+    :param folder: the folder where the desired files are located
+
+    :return: A list of the files' names
+    """
+    agg = []
+    allfiles = listdir(folder)
+    for f in allfiles:
+        if f.endswith('.txt'):
+            agg.append(f)
+    return agg
+
+
+def training_extract(foldertag):
+    """ Extract training data from files
+
+    Extract all tagged data and outputs it into a specified file.
+    Tagged data must be located in a folder and in .txt format
+
+    :param foldertag: the folder where the tagged data files are located
+
+    :return: A text file with all pre-tagged named entities extracted.
+    """
 
     enamex_pattern = re.compile(r'<ENAMEX.*?>.*?</ENAMEX>', re.ASCII)
+    list_of_files = folder_to_txt_files(foldertag)
 
-    data = re.findall(enamex_pattern, nltk.data.load(path, format="text"))
+    data = []
+    data = [re.findall(enamex_pattern, nltk.data.load(foldertag + f, format="text")) for f in list_of_files ]
+    for item in data:
+        listoftagged_file.write("%s\n" % item)
+
     return data
 
 # Test pattern to match all words
 # enamex_pattern = re.compile(r'<ENAMEX.*?>.*?</ENAMEX>', re.ASCII)
 # print(re.findall(enamex_pattern, nltk.data.load(path_trainwsj, format="text")))
 
-print(training_extract(path_trainwsj))
+print(training_extract(path_taggedfolder))
 
+# print(training_extract(path_trainwsjtext1))
 
 # ####################
 # Possibly useless   #
 # ####################
 
 """
-Sample name tagger from canvas (most likely useless)
+Sample names tagger
 """
 
 from nltk.corpus import names
@@ -80,9 +110,8 @@ def choose_tag(self, tokens, index, history):
 """
 Brill tagger wrapper from canvas
 """
-
-
 # make sure you've got some train_sents!
+
 
 def train_brill_tagger(initial_tagger, train_sents, **kwargs):
     templates = [
