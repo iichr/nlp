@@ -4,7 +4,7 @@ from nltk.tag import brill, brill_trainer
 from nltk.corpus.reader import PlaintextCorpusReader
 import nltk.data
 from os import listdir
-from os.path import isfile
+import itertools
 
 ##############################
 # PATHS
@@ -60,26 +60,71 @@ def training_extract(foldertag):
 
     :param foldertag: the folder where the tagged data files are located
 
-    :return: A text file with all pre-tagged named entities extracted.
+    :return: A text file with all pre-tagged named entities extracted,
+    each on a new line.
     """
 
     enamex_pattern = re.compile(r'<ENAMEX.*?>.*?</ENAMEX>', re.ASCII)
     list_of_files = folder_to_txt_files(foldertag)
 
-    data = []
-    data = [re.findall(enamex_pattern, nltk.data.load(foldertag + f, format="text")) for f in list_of_files ]
-    for item in data:
+    data = [re.findall(enamex_pattern, nltk.data.load(foldertag + f, format="text")) for f in list_of_files]
+    # flatten the resulting in the most efficient manner:
+    merged_data = list(itertools.chain.from_iterable(data))
+
+    for item in merged_data:
         listoftagged_file.write("%s\n" % item)
 
-    return data
+    return merged_data
 
 # Test pattern to match all words
 # enamex_pattern = re.compile(r'<ENAMEX.*?>.*?</ENAMEX>', re.ASCII)
 # print(re.findall(enamex_pattern, nltk.data.load(path_trainwsj, format="text")))
 
-print(training_extract(path_taggedfolder))
+#  TESTING
+# print(training_extract(path_taggedfolder))
+ex1 = training_extract(path_taggedfolder)
 
-# print(training_extract(path_trainwsjtext1))
+def somefunct(s):
+    return s[:len(s)-1]
+
+
+# TODO Extract each category into its own file/dictionary
+def category_extract(entitylist):
+    """
+    For every item that begins with <ENAMEX TYPE="ORGANIZATION">
+    and ends with </ENAMEX> do the following:
+    - extract it as a key in a dictionary
+    - set up the value as <ENAMEX TYPE="ORGANIZATION">
+
+    :param entitylist:
+    :return:
+    """
+
+    desired_pattern = re.compile(r'[>"].*?[<"]', re.ASCII)
+
+    # Extract to a list of tuples in the format [("TAG",ENTITY)]
+    raw_entities = []
+    for l in (re.findall(desired_pattern, entity) for entity in entitylist):
+        raw_entities.append(list(map(lambda s: (s[:len(s) - 1])[1:], l)))
+
+    # TESTING
+    # return raw_entities
+
+    # Extract just the named entities to a list
+    ne = []
+    ne = [entry[1] for entry in raw_entities]
+
+    # TESTING
+    # return ne
+
+    # POS Tag all entities from above list
+    pos_tagged_ne = [nltk.pos_tag(e.split()) for e in ne]
+
+    assert len(pos_tagged_ne) == len(ne)
+    return pos_tagged_ne
+
+# TESTING
+print(category_extract(ex1))
 
 # ####################
 # Possibly useless   #
