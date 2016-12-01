@@ -5,6 +5,7 @@ from nltk.corpus.reader import PlaintextCorpusReader
 import nltk.data
 from os import listdir
 import itertools
+import numpy
 
 ##############################
 # PATHS
@@ -20,7 +21,8 @@ allfiles = listdir(path_taggedfolder)
 # WRITING TO FILES
 ##############################
 
-listoftagged_file = open('extractedtags', 'w')
+listoftagged_file = open('extractedtags.txt', 'w')
+pospatterns_file = open('pospatterns.txt', 'w')
 
 
 def names_extract():
@@ -66,14 +68,17 @@ def training_extract(foldertag):
 
     enamex_pattern = re.compile(r'<ENAMEX.*?>.*?</ENAMEX>', re.ASCII)
     list_of_files = folder_to_txt_files(foldertag)
+    print("Folder files iterated through.\n")
 
     data = [re.findall(enamex_pattern, nltk.data.load(foldertag + f, format="text")) for f in list_of_files]
     # flatten the resulting in the most efficient manner:
     merged_data = list(itertools.chain.from_iterable(data))
+    print("Training data extracted.\n")
 
     for item in merged_data:
         listoftagged_file.write("%s\n" % item)
 
+    print("Extracted training entities have been written to text file.\n")
     return merged_data
 
 # Test pattern to match all words
@@ -115,12 +120,49 @@ def tuples_extract(entitylist):
         tag_and_ne_list = list(map(list, zip(*pos_tag)))
         just_tag_seq = tag_and_ne_list[1]
         processed += [(cat, ne, pos_tag, just_tag_seq)]
+
+    print("Tuples with POS tags extracted.\n")
     return processed
 
 # TESTING
-print(tuples_extract(ex1))
-print(len(tuples_extract(ex1)))
+# print(tuples_extract(ex1))
+# print(len(tuples_extract(ex1)))
 
+
+def pos_patterns_by_cat(tuplelist):
+    # Possible usage in a grammar.
+    # preserve ordering to determine most commonly used
+    _person_patterns = []
+    _org_patterns = []
+    _locat_patterns = []
+    for elem in tuplelist:
+        cat = elem[0]
+        tags = elem[3]
+        if cat == 'PERSON':
+            _person_patterns += [(cat, tags)]
+        if cat == 'ORGANIZATION':
+            _org_patterns += [(cat, tags)]
+        if cat == 'LOCATION':
+            _locat_patterns += [(cat, tags)]
+
+    person_patterns = sorted(_person_patterns, reverse=True)
+    org_patterns = sorted(_org_patterns, reverse=True)
+    locat_patterns = sorted(_locat_patterns, reverse=True)
+    _allpatterns = list(itertools.chain(person_patterns, org_patterns, locat_patterns))
+
+    print("All POS patterns extracted from list of tuples.")
+
+    # Convert all the patterns to a set
+    used = []
+    allpatterns = [x for x in _allpatterns if x not in used and (used.append(x) or True)]
+    print("Set of POS patterns by category generated.\n")
+
+    return allpatterns
+
+# TESTING
+ex2 = tuples_extract(ex1)
+# print(pos_patterns_by_cat(ex2))
+pos_patterns_by_cat(ex2)
 
 # ####################
 # Possibly useless   #
