@@ -84,20 +84,16 @@ def training_extract(foldertag):
 # print(training_extract(path_taggedfolder))
 ex1 = training_extract(path_taggedfolder)
 
-def somefunct(s):
-    return s[:len(s)-1]
 
-
-# TODO Extract each category into its own file/dictionary
-def category_extract(entitylist):
+def tuples_extract(entitylist):
     """
-    For every item that begins with <ENAMEX TYPE="ORGANIZATION">
-    and ends with </ENAMEX> do the following:
-    - extract it as a key in a dictionary
-    - set up the value as <ENAMEX TYPE="ORGANIZATION">
+    Convert a list of entities to a list of tuples consisting of the type
+    ('category', 'named entity NE', [('part1ofNE', 'NNP'),...], ['POSTag1',...])
 
-    :param entitylist:
-    :return:
+    Uses part of speech tagging.
+
+    :param entitylist: The list consisting of pre-tagged entities.
+    :return: A list of tuples with a category, a named entity and said POS tags.
     """
 
     desired_pattern = re.compile(r'[>"].*?[<"]', re.ASCII)
@@ -109,22 +105,22 @@ def category_extract(entitylist):
 
     # TESTING
     # return raw_entities
+    # print(len(raw_entities))
 
-    # Extract just the named entities to a list
-    ne = []
-    ne = [entry[1] for entry in raw_entities]
-
-    # TESTING
-    # return ne
-
-    # POS Tag all entities from above list
-    pos_tagged_ne = [nltk.pos_tag(e.split()) for e in ne]
-
-    assert len(pos_tagged_ne) == len(ne)
-    return pos_tagged_ne
+    processed = []
+    for e in raw_entities:
+        cat = e[0]
+        ne = e[1]
+        pos_tag = nltk.pos_tag(ne.split())
+        tag_and_ne_list = list(map(list, zip(*pos_tag)))
+        just_tag_seq = tag_and_ne_list[1]
+        processed += [(cat, ne, pos_tag, just_tag_seq)]
+    return processed
 
 # TESTING
-print(category_extract(ex1))
+print(tuples_extract(ex1))
+print(len(tuples_extract(ex1)))
+
 
 # ####################
 # Possibly useless   #
