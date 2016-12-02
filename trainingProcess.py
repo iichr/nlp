@@ -8,6 +8,7 @@ import itertools
 import csv
 import collections
 from nltk.corpus import gazetteers
+from operator import itemgetter
 
 ##############################
 # PATHS
@@ -51,23 +52,6 @@ def sort_by_freq_desc(seq):
     sorted_seq = sorted(seq, key=counts.get, reverse=True)
     return sorted_seq
 
-def sort_tuples_by_freq_desc(seq):
-    """
-    An efficient way to sort some sequence by frequency
-    utilising a Counter object.
-
-    Complexity:
-    Calls to counter key - O(1)
-    Building the Counter - O(n) one time call
-
-    :param seq: The sequence to be sorted.
-    :return: The sorted sequence.
-    """
-    # counts = collections.Counter(x[1] for x in seq)
-    # sorted_seq = sorted(seq, key=counts.get, reverse=True)
-    counts = collections.Counter(t for t in seq)
-    sorted_seq = sorted(seq, key=counts.get, reverse=True)
-    return sorted_seq
 
 def remove_duplicates(seq):
     """
@@ -259,17 +243,34 @@ def pos_patterns_by_cat(tuplelist):
         if cat == 'LOCATION':
             _locat_patterns += [(cat, tags)]
 
-    person_patterns = sort_tuples_by_freq_desc(_person_patterns)
-    org_patterns = sort_tuples_by_freq_desc(_org_patterns)
-    locat_patterns = sort_tuples_by_freq_desc(_locat_patterns)
-    _allpatterns = list(itertools.chain(person_patterns, org_patterns, locat_patterns))
+    person_patterns = sorted(_person_patterns, reverse=True)
+    org_patterns = sorted(_org_patterns, reverse=True)
+    locat_patterns = sorted(_locat_patterns, reverse=True)
 
+    _allpatterns = list(itertools.chain(person_patterns, org_patterns, locat_patterns))
     print("All POS patterns extracted from list of tuples.")
 
-    # Convert all the patterns to a set
-    # used = []
-    # allpatterns = [x for x in _allpatterns if x not in used and (used.append(x) or True)]
-    allpatterns = remove_duplicates(_allpatterns)
+    # Counts second part of tuple
+    # Since the list in the tuple is mutable, we take it's tuple
+    counts = collections.Counter((x, tuple(y)) for (x, y) in _allpatterns)
+    __allpatterns = sorted(counts, key=counts.get, reverse=True)
+
+    # TESTING output w
+    # print(__allpatterns)
+
+    pos_tag = []
+    cat = list(map(itemgetter(0), __allpatterns))
+    _pos_tag = map(itemgetter(1), __allpatterns)
+    for t in _pos_tag:
+        item = list(t)
+        pos_tag += [item]
+
+    # TESTING - list of strings for categories, list of lists for pos_tags
+    # print(firsts)
+    # print(pos_tag)
+
+    allpatterns = sorted(list(zip(cat, pos_tag)), key=lambda x: x[0])
+
     print("Set of POS patterns by category generated.\n")
 
     # extract all patterns to a file
@@ -300,7 +301,7 @@ def most_common_endings_org(listorgs):
     :return: Most common suffixes in organisation names.
     """
 
-    # TODO FIX ALL OCCURRENCES OF SORTED, SORT USING FREQUENCY INSTEAD AS SHOWN BELOW THIS!!!!!!!!!!!!!!
+    # TODO FIX SOME OCCURRENCES OF SORTED, WHICH WOULD BENEFIT FROM A FREQUENCY COUNTER
     _endingscommon = list()
     for e in listorgs:
         tokens = e.split()
