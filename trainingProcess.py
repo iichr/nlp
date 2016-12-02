@@ -5,7 +5,9 @@ from nltk.corpus.reader import PlaintextCorpusReader
 import nltk.data
 from os import listdir
 import itertools
-import numpy
+import csv
+import collections
+from nltk.corpus import gazetteers
 
 ##############################
 # PATHS
@@ -17,6 +19,12 @@ path_taggedfolder = '/Users/iichr/Documents/Python/nlp/trainData/wsj_training/'
 
 allfiles = listdir(path_taggedfolder)
 
+# ENGLISH HONORIFICS
+# SOURCE: https://github.com/dariusk/corpora/blob/master/data/humans/englishHonorifics.json
+honorifics = '/Users/iichr/Documents/Python/nlp/honorifics.txt'
+
+#
+
 ##############################
 # WRITING TO FILES
 ##############################
@@ -24,19 +32,122 @@ allfiles = listdir(path_taggedfolder)
 listoftagged_file = open('extractedtags.txt', 'w')
 pospatterns_file = open('pospatterns.txt', 'w')
 
+##############################
+# DATA STRUCTURES
+##############################
+def sort_by_freq_desc(seq):
+    """
+    An efficient way to sort some sequence by frequency
+    utilising a Counter object.
 
-def names_extract():
-    """ Extract names from our corpus to a list
+    Complexity:
+    Calls to counter key - O(1)
+    Building the Counter - O(n) one time call
+
+    :param seq: The sequence to be sorted.
+    :return: The sorted sequence.
+    """
+    counts = collections.Counter(seq)
+    sorted_seq = sorted(seq, key=counts.get, reverse=True)
+    return sorted_seq
+
+def sort_tuples_by_freq_desc(seq):
+    """
+    An efficient way to sort some sequence by frequency
+    utilising a Counter object.
+
+    Complexity:
+    Calls to counter key - O(1)
+    Building the Counter - O(n) one time call
+
+    :param seq: The sequence to be sorted.
+    :return: The sorted sequence.
+    """
+    # counts = collections.Counter(x[1] for x in seq)
+    # sorted_seq = sorted(seq, key=counts.get, reverse=True)
+    counts = collections.Counter(t for t in seq)
+    sorted_seq = sorted(seq, key=counts.get, reverse=True)
+    return sorted_seq
+
+def remove_duplicates(seq):
+    """
+    Removes duplicates from a list, preserving its ordering.
+    Runs in O(n) complexity.
+
+    :param seq: The list to be made into a set.
+    :return: A list (set) without duplicates.
+    """
+    seen = list()
+    seen_add = seen.append
+    return [x for x in seq if not (x in seen or seen_add(x))]
+
+##############################
+# FILES READING
+##############################
+
+
+def honorifics_list():
+    """
+    Extract the honorifics from given file to a list
+    :return: The list of honorifics in alphabetical order.
+    """
+    list_hon = []
+    for line in csv.reader(open(honorifics), delimiter=' '):
+        if line is not '':
+            list_hon += line
+    return list_hon
+
+##############################
+# NAMED ENTITY RECOGNITION
+##############################
+
+
+def _names_extract():
+    """ IN HOUSE METHOD
+    Extract names from our corpus to a set
     Uses the three files for male, female, and family names.
 
-    :return: A list of names.
+    :return: A set of names.
     """
     # name_read = nltk.corpus.reader.plaintext.PlaintextCorpusReader(path_names, '.*')
     name_read = PlaintextCorpusReader(path_names, '.*')
 
-    names = []
+    _names_corpus = set()
     for w in (name_read.words('names.male') + name_read.words('names.female') + name_read.words('names.family')):
-        names.append(['PERSON', w])
+        # names.add('PERSON', w)
+        _names_corpus.add(w)
+    return _names_corpus
+
+
+def names_extract(listentities):
+    # noise = ['}', '(', ')']
+    names_corpus = set()
+    for e in listentities:
+        if e[0] == 'PERSON':
+            if '}' not in e[1]:
+                for n in e[1].split():
+                    names_corpus.add(n)
+    return names_corpus.union(_names_extract())
+
+
+def loc_extract(listentities):
+    loc_corpus = set()
+    for e in listentities:
+        if e[0] == 'LOCATION':
+            # remove errors i.e only one char locations
+            if len(e[1]) > 1:
+                loc_corpus.add(e[1])
+    return loc_corpus
+
+
+def org_extract(listentities):
+    org_corpus = set()
+    for e in listentities:
+        if e[0] == 'ORGANIZATION':
+            # remove errors, i.e organisation is location
+            if e[1] not in locations:
+                org_corpus.add(e[1])
+    return org_corpus
 
 
 def folder_to_txt_files(folder):
@@ -97,6 +208,9 @@ def tuples_extract(entitylist):
 
     Uses part of speech tagging.
 
+    To access:
+    NAMED ENTITY: for loop: tuples_extract(list)[1]
+
     :param entitylist: The list consisting of pre-tagged entities.
     :return: A list of tuples with a category, a named entity and said POS tags.
     """
@@ -145,24 +259,88 @@ def pos_patterns_by_cat(tuplelist):
         if cat == 'LOCATION':
             _locat_patterns += [(cat, tags)]
 
-    person_patterns = sorted(_person_patterns, reverse=True)
-    org_patterns = sorted(_org_patterns, reverse=True)
-    locat_patterns = sorted(_locat_patterns, reverse=True)
+    person_patterns = sort_tuples_by_freq_desc(_person_patterns)
+    org_patterns = sort_tuples_by_freq_desc(_org_patterns)
+    locat_patterns = sort_tuples_by_freq_desc(_locat_patterns)
     _allpatterns = list(itertools.chain(person_patterns, org_patterns, locat_patterns))
 
     print("All POS patterns extracted from list of tuples.")
 
     # Convert all the patterns to a set
-    used = []
-    allpatterns = [x for x in _allpatterns if x not in used and (used.append(x) or True)]
+    # used = []
+    # allpatterns = [x for x in _allpatterns if x not in used and (used.append(x) or True)]
+    allpatterns = remove_duplicates(_allpatterns)
     print("Set of POS patterns by category generated.\n")
+
+    # extract all patterns to a file
+    for pattern in allpatterns:
+        pospatterns_file.write("%s\n" % str(pattern))
 
     return allpatterns
 
-# TESTING
+# TESTING 2 DEC
 ex2 = tuples_extract(ex1)
+# names = names_extract(ex2)
+locations = loc_extract(ex2)
+orgs = org_extract(ex2)
+
+# print(len(orgs))
+# print(len(names))
+# print(len(locations))
 # print(pos_patterns_by_cat(ex2))
 pos_patterns_by_cat(ex2)
+
+
+def most_common_endings_org(listorgs):
+    """
+    Get a list of the most common organisation endings e.g Inc., Corp. etc.
+    in descending order of their frequency in the training data.
+
+    :param listorgs: A list of organisations to be passed.
+    :return: Most common suffixes in organisation names.
+    """
+
+    # TODO FIX ALL OCCURRENCES OF SORTED, SORT USING FREQUENCY INSTEAD AS SHOWN BELOW THIS!!!!!!!!!!!!!!
+    _endingscommon = list()
+    for e in listorgs:
+        tokens = e.split()
+        _endingscommon.append(tokens[-1])
+    counts = collections.Counter(_endingscommon)
+    endingscommon = sorted(_endingscommon, key=counts.get, reverse=True)
+    return remove_duplicates(endingscommon)
+
+# print(most_common_endings_org(orgs))
+
+def regexp_grammar(patternlist):
+    return None
+
+
+def nameCheck(e):
+    name = e.split()
+
+    if name[0] in honorifics_list():
+        return True
+
+    for n in name:
+        if n in names:
+            return True
+        if not n.isupper():
+            return False
+
+
+def locationCheck(e):
+    if e[0].isupper() and e in locations:
+        return True
+
+
+def orgCheck(e):
+    if e in orgs:
+        return True
+    if e.isupper():
+        return True
+
+    org_tok = e.split()
+
 
 # ####################
 # Possibly useless   #
