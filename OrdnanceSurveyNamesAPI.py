@@ -11,7 +11,7 @@ UNDER THE Apache LICENCE
 """
 
 
-def ordnance_survey_find(query):
+def ordnance_survey_location_query(query):
 
     # DEBUG
     # print('CONNECTION TO ORDNANCE SURVEY DATABASE')

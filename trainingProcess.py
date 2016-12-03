@@ -9,6 +9,7 @@ import csv
 import collections
 from nltk.corpus import gazetteers
 from operator import itemgetter
+from OrdnanceSurveyNamesAPI import ordnance_survey_location_query
 
 ##############################
 # PATHS
@@ -283,7 +284,9 @@ def pos_patterns_by_cat(tuplelist):
 ex2 = tuples_extract(ex1)
 # names = names_extract(ex2)
 locations = loc_extract(ex2)
+# print(locations)
 orgs = org_extract(ex2)
+# print(orgs)
 
 # print(len(orgs))
 # print(len(names))
@@ -292,7 +295,7 @@ orgs = org_extract(ex2)
 pos_patterns_by_cat(ex2)
 
 
-def most_common_endings_org(listorgs):
+def org_common_endings(listorgs):
     """
     Get a list of the most common organisation endings e.g Inc., Corp. etc.
     in descending order of their frequency in the training data.
@@ -304,13 +307,16 @@ def most_common_endings_org(listorgs):
     # TODO FIX SOME OCCURRENCES OF SORTED, WHICH WOULD BENEFIT FROM A FREQUENCY COUNTER
     _endingscommon = list()
     for e in listorgs:
-        tokens = e.split()
-        _endingscommon.append(tokens[-1])
+            tokens = e.split()
+            # filter out proper organisation names with 1 word only
+            if len(tokens) > 1:
+                _endingscommon.append(tokens[-1])
     counts = collections.Counter(_endingscommon)
     endingscommon = sorted(_endingscommon, key=counts.get, reverse=True)
     return remove_duplicates(endingscommon)
 
-# print(most_common_endings_org(orgs))
+# TESTING
+# print(org_common_endings(orgs))
 
 def regexp_grammar(patternlist):
     return None
@@ -332,7 +338,22 @@ def nameCheck(e):
 def locationCheck(e):
     if e[0].isupper() and e in locations:
         return True
+    if ordnance_survey_location_query(e)>0 :
+        return True
 
+    else:
+        return False
+
+print("Location Testing")
+print(locationCheck("Lithuania"))
+print(locationCheck("Upper Westside"))
+print(locationCheck("Dniepropetrovsk\n"))
+
+print(locationCheck("High Wycombe"))
+print(locationCheck("Birmingham"))
+print(locationCheck("Aberystwyth\n"))
+print(locationCheck("Wisconsin"))
+print(locationCheck("Freiburg\n"))
 
 def orgCheck(e):
     if e in orgs:
@@ -341,6 +362,19 @@ def orgCheck(e):
         return True
 
     org_tok = e.split()
+    if org_tok[-1] in org_common_endings(orgs):
+        return True
+
+    else:
+        return False
+
+# TESTING ORGANISATIONS
+print("Organisation Testing")
+print(orgCheck('Trump University'))
+print(orgCheck('TKZS'))
+print(orgCheck('Bulgarian Chamber of Commerce'))
+print(orgCheck('Peter Stephenson'))
+
 
 
 # ####################
