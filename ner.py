@@ -16,9 +16,9 @@ from OrdnanceSurveyNamesAPI import ordnance_survey_location_query
 ##############################
 
 path_names = '/Users/c/Documents/Python/nlp/trainData'
-path_trainwsjtext1 = '/Users/c/Documents/Python/nlp/trainData/wsj_training/wsj_0001.txt'
 path_taggedfolder = '/Users/c/Documents/Python/nlp/trainData/wsj_training/'
-allfiles = listdir(path_taggedfolder)
+
+# allfiles = listdir(path_taggedfolder)
 
 path_testfolder = '/Users/c/Documents/Python/nlp/trainData/wsj_untagged/'
 
@@ -30,8 +30,8 @@ honorifics = '/Users/c/Documents/Python/nlp/honorifics.txt'
 # WRITING TO FILES
 ##############################
 
-listoftagged_file = open('extractedtags.txt', 'w')
-pospatterns_file = open('pospatterns.txt', 'w')
+listoftagged_file = open('extractedtags_new.txt', 'w')
+pospatterns_file = open('pospatterns_new.txt', 'w')
 
 ##############################
 # DATA STRUCTURES
@@ -616,7 +616,7 @@ def namedentityrecognition(trainingpath, testpath):
 # namedentityrecognition(path_taggedfolder, path_testfolder)
 
 # TEST 2 on newly released data
-newtagged = '/Users/c/Documents/Python/nlp/testData/wsj_test_tagged/'
-newuntagged = '/Users/c/Documents/Python/nlp/testData/wsj_New_test_data/'
+# newtagged = '/Users/c/Documents/Python/nlp/testData/wsj_test_tagged/'
+# newuntagged = '/Users/c/Documents/Python/nlp/testData/wsj_New_test_data/'
 
-namedentityrecognition(newtagged,newuntagged)
+# namedentityrecognition(newtagged, newuntagged)

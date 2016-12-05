@@ -2,9 +2,6 @@ ID:1527549
 
 The main file is ner.py
 
-When run, it should automatically perform NER on the newly released data*
-*that is if you have the same username and folder structure as I do (highly unlikely...)
-
 
 The following method is to be called for other runs:
 
@@ -16,6 +13,10 @@ where:
 	untaggedpath = the path with the untagged (test) data, which to perform NER on.
 
 
+CERTAIN PATHS MAY HAVE TO BE RECONFIGURED IN ORDER FOR ner.py TO WORK PROPERLY.
+FOR EXAMPLE: the location of honorifics
+
+
 More information on the code can be found in the docstrings in the ner.py file.
-For analysis and descripiton of the methods used, refer to the file entitled [Assignment1.pdf],
+For analysis and description of the methods used, refer to the file entitled [Assignment1.pdf],
 which contains a report.
