@@ -1,22 +1,23 @@
-ID:1527549
+# Named Entity Recognition Project
+## Natural Language Processing
 
 The main file is ner.py
 
 
-The following method is to be called for other runs:
-
+Call this method to run NER using own supplied training and test data
 ------
+```python
 namedentityrecognition(taggedpath,untaggedpath)
+```
 ------
 where:
 	taggedpath = the path with the tagged (training) data.
 	untaggedpath = the path with the untagged (test) data, which to perform NER on.
 
 
-CERTAIN PATHS MAY HAVE TO BE RECONFIGURED IN ORDER FOR ner.py TO WORK PROPERLY.
+PLEASE NOTE THAT CERTAIN PATHS MAY HAVE TO BE RECONFIGURED IN ORDER FOR ner.py TO WORK PROPERLY.
 FOR EXAMPLE: the location of honorifics
 
 
 More information on the code can be found in the docstrings in the ner.py file.
-For analysis and description of the methods used, refer to the file entitled [Assignment1.pdf],
-which contains a report.
+For an in-depth analysis and description of the techniques used, refer to the [Report] file.
